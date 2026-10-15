@@ -1,0 +1,1 @@
+Easypaisa BVS device, interactive flow map. Cash Withdrawal flow: launcher, login, Select App, EasyPaisa Menu, Cash Services, Cash Withdrawal, Level 1 consent, thumb scan, Unmatched from NADRA, retry, withdrawal successful.

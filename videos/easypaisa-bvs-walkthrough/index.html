@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Inter"; src: url("assets/fonts/Inter-400-latin.woff2") format("woff2"); font-weight: 400; }
+      @font-face { font-family: "Inter"; src: url("assets/fonts/Inter-700-latin.woff2") format("woff2"); font-weight: 700; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #0b1520; }
+      #root { width: 100%; height: 100%; position: relative; font-family: "Inter", sans-serif; color: #e8eef4; background: #0b1520; }
+
+      /* ground */
+      #ground { position: absolute; inset: 0; background: radial-gradient(900px 700px at 1450px 540px, rgba(0,163,78,.20), rgba(0,163,78,0) 70%), #0b1520; }
+      #grid { position: absolute; inset: 0; opacity: .5;
+        background-image: linear-gradient(rgba(143,163,182,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(143,163,182,.07) 1px, transparent 1px);
+        background-size: 60px 60px; }
+
+      /* device */
+      #devwrap { position: absolute; left: 1230px; top: 60px; width: 441px; height: 960px; }
+      #cam { position: absolute; inset: 0; transform-origin: 50% 60%; }
+      #shadow { position: absolute; left: 30px; right: 30px; bottom: -10px; height: 60px; border-radius: 50%; background: rgba(0,0,0,.55); filter: blur(28px); }
+      .scr { position: absolute; left: 0; top: 0; width: 441px; height: 960px; opacity: 0; }
+      .tap { position: absolute; width: 96px; height: 96px; border-radius: 50%; border: 5px solid #00a34e; background: rgba(0,163,78,.18); opacity: 0; }
+
+      /* left column */
+      .block { position: absolute; left: 150px; top: 330px; width: 900px; opacity: 0; }
+      .eyebrow { font-size: 26px; font-weight: 700; letter-spacing: .16em; color: #00a34e; text-transform: uppercase; }
+      .title { font-size: 78px; font-weight: 700; letter-spacing: -.02em; line-height: 1.08; margin-top: 18px; }
+      .desc { font-size: 34px; line-height: 1.45; color: #a9bccd; margin-top: 26px; max-width: 840px; }
+      .hero .title { font-size: 96px; }
+
+      #progress { position: absolute; left: 150px; top: 880px; width: 900px; height: 10px; display: flex; gap: 10px; opacity: 0; }
+      .seg { flex: 1; height: 10px; border-radius: 5px; background: #1c2d3e; overflow: hidden; }
+      .fill { width: 100%; height: 100%; background: #00a34e; transform-origin: 0 50%; }
+      #plabel { position: absolute; left: 150px; top: 910px; font-size: 22px; color: #8fa3b6; letter-spacing: .06em; opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="47" data-width="1920" data-height="1080">
+      <div id="bg" class="clip" data-start="0" data-duration="47" data-track-index="0">
+        <div id="ground"></div>
+        <div id="grid"></div>
+      </div>
+
+      <div id="stage" class="clip" data-start="0" data-duration="47" data-track-index="1">
+        <div id="devwrap">
+          <div id="shadow"></div>
+          <div id="cam"></div>
+        </div>
+        <div id="blocks"></div>
+        <div id="progress"></div>
+        <div id="plabel">Cash Withdrawal flow · Easypaisa BVS Device Simulator</div>
+      </div>
+    </div>
+
+    <script>
+      // Device screenshots are 704x1534 (2x); displayed at 441x960.
+      const S = 960 / 1534;
+      const SCREENS = [
+        ["01-launcher", 0], ["02-login-empty", 7.4], ["03-login-filled", 9.0], ["04-select-app", 11.6],
+        ["05-menu", 14.2], ["06-cash-menu", 16.9], ["07-cw-form-empty", 19.5], ["08-cw-form-filled", 21.0],
+        ["09-cw-level-consent", 24.2], ["10-cw-reader-unlocked", 28.4], ["11-cw-scanning", 29.6],
+        ["12-cw-please-wait", 31.0], ["13-cw-nadra-unmatched", 32.4], ["14-cw-retry-ready", 36.0],
+        ["15-cw-scanning-2", 37.0], ["16-cw-success", 38.6],
+      ];
+      // Tap centres measured from the simulator, in 2x screenshot pixels.
+      const TAPS = [
+        [254, 1154, 6.6], [352, 596, 10.9], [352, 838, 13.5], [206, 705, 16.2], [206, 696, 18.8],
+        [205, 982, 23.5], [217, 941, 27.7], [352, 800, 29.1], [352, 989, 35.4], [352, 800, 36.6],
+      ];
+      const STEPS = [
+        [4.0, 7.4, "Open TP BVS", "From the terminal's home screen, the retailer taps the TP BVS app."],
+        [7.4, 11.6, "Retailer login", "Sign in with the retailer's CNIC and password."],
+        [11.6, 14.2, "Choose Easypaisa", "Select App offers Telenor Services or Easypaisa. Tap Easypaisa."],
+        [14.2, 16.9, "Cash Services", "The EasyPaisa Menu has four pages. Cash Services sits on page one."],
+        [16.9, 19.5, "Cash Withdrawal", "Pick Cash Withdrawal from the Cash Services Menu."],
+        [19.5, 24.2, "Fill in the form", "Customer account, amount, retailer user ID and PIN. Then Verify & Submit."],
+        [24.2, 28.4, "Customer consent", "Verifying by thumb lifts a Level 0 account to Level 1. The customer taps OK."],
+        [28.4, 32.4, "Read the thumb", "The reader unlocks. The right thumb is scanned and sent to NADRA."],
+        [32.4, 38.6, "Unmatched? Try again", "NADRA can return Unmatched. No transaction is created, so just read the thumb again."],
+        [38.6, 43.4, "Withdrawal successful", "The receipt shows the TRX ID, PKR 50 to hand over, the fee and the tax."],
+      ];
+
+      const cam = document.getElementById("cam");
+      SCREENS.forEach(([f], i) => {
+        const im = document.createElement("img");
+        im.id = "scr-" + i; im.className = "scr"; im.src = "assets/screens/" + f + ".png"; im.alt = "";
+        cam.appendChild(im);
+      });
+      TAPS.forEach(([x, y], i) => {
+        const t = document.createElement("div");
+        t.id = "tap-" + i; t.className = "tap";
+        t.style.left = (x * S - 48) + "px"; t.style.top = (y * S - 48) + "px";
+        cam.appendChild(t);
+      });
+      const blocks = document.getElementById("blocks");
+      const mk = (id, cls, eyebrow, title, desc) => {
+        const b = document.createElement("div");
+        b.id = id; b.className = "block " + cls;
+        b.innerHTML = `<div class="eyebrow">${eyebrow}</div><div class="title">${title}</div><div class="desc">${desc}</div>`;
+        blocks.appendChild(b);
+      };
+      mk("intro", "hero", "Easypaisa BVS Device", "Cash withdrawal, step by step", "A walkthrough of the retailer terminal simulator.");
+      STEPS.forEach(([, , t, d], i) => mk("step-" + i, "", `Step ${String(i + 1).padStart(2, "0")} / 10`, t, d));
+      mk("outro", "hero", "Done in 10 steps", "PKR 50 paid out", "Simulated flow, no live system. Every CNIC, till and TRX number is masked.");
+      const prog = document.getElementById("progress");
+      STEPS.forEach((_, i) => { prog.insertAdjacentHTML("beforeend", `<div class="seg"><div class="fill" id="fill-${i}"></div></div>`); });
+
+      const tl = gsap.timeline({ paused: true });
+
+      // device entrance
+      tl.fromTo("#devwrap", { x: 260, opacity: 0 }, { x: 0, opacity: 1, duration: 1.1, ease: "power3.out" }, 0.3);
+
+      // screens: hard-ish crossfade, each new one fades in over the previous
+      SCREENS.forEach(([, t], i) => {
+        if (i === 0) tl.set("#scr-0", { opacity: 1 }, 0);
+        else tl.fromTo("#scr-" + i, { opacity: 0 }, { opacity: 1, duration: 0.22, ease: "none" }, t);
+        if (i > 0) tl.set("#scr-" + (i - 1), { opacity: 0 }, t + 0.24);
+      });
+
+      // taps
+      TAPS.forEach(([, , t], i) => {
+        tl.fromTo("#tap-" + i, { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.22, ease: "back.out(2)" }, t);
+        tl.to("#tap-" + i, { scale: 1.6, opacity: 0, duration: 0.45, ease: "power2.out" }, t + 0.3);
+      });
+
+      // camera push-ins on the dialogs
+      tl.to("#cam", { scale: 1.06, duration: 1.2, ease: "power2.inOut" }, 24.3);
+      tl.to("#cam", { scale: 1, duration: 0.8, ease: "power2.inOut" }, 28.2);
+      tl.to("#cam", { scale: 1.06, duration: 1.2, ease: "power2.inOut" }, 32.5);
+      tl.to("#cam", { scale: 1, duration: 0.8, ease: "power2.inOut" }, 35.6);
+      tl.to("#cam", { scale: 1.08, duration: 1.6, ease: "power2.inOut" }, 38.7);
+      tl.to("#cam", { scale: 1, duration: 1.0, ease: "power2.inOut" }, 43.4);
+
+      // text blocks
+      const showBlock = (sel, a, b) => {
+        tl.fromTo(sel, { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, a);
+        if (b !== null) tl.to(sel, { opacity: 0, y: -22, duration: 0.3, ease: "power2.in" }, b - 0.32);
+      };
+      showBlock("#intro", 0.5, 4.0);
+      STEPS.forEach(([a, b], i) => showBlock("#step-" + i, a + 0.05, b));
+      showBlock("#outro", 43.5, null);
+
+      // progress bar
+      tl.fromTo(["#progress", "#plabel"], { opacity: 0 }, { opacity: 1, duration: 0.5 }, 4.0);
+      STEPS.forEach(([a, b], i) => tl.fromTo("#fill-" + i, { scaleX: 0 }, { scaleX: 1, duration: b - a, ease: "none" }, a));
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
